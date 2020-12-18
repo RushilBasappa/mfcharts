@@ -5,17 +5,24 @@ import StockChart from "./StockChart";
 import TextField from "@material-ui/core/TextField";
 import axios from "axios";
 import { Autocomplete } from "@material-ui/lab";
+import { Button } from "@material-ui/core";
 
 const App = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [listMF, setlistMF] = useState([]);
-  const [selectedMF, setSelectedMF] = useState([]);
+  const [selectedMF, setSelectedMF] = useState(
+    JSON.parse(localStorage.getItem("selectedMF")) || []
+  );
 
   useEffect(() => {
     axios.get(`https://api.mfapi.in/mf/search?q=${searchQuery}`).then((res) => {
       setlistMF(res.data);
     });
   }, [searchQuery]);
+
+  useEffect(() => {
+    localStorage.setItem("selectedMF", JSON.stringify(selectedMF));
+  }, [selectedMF]);
 
   return (
     <div>
@@ -25,8 +32,10 @@ const App = () => {
           multiple
           options={listMF}
           onChange={(_, value) => {
-            setSelectedMF(value.map((schemaData) => schemaData.schemeCode));
+            setSelectedMF(value.map((schemeData) => schemeData));
           }}
+          limitTags={2}
+          value={selectedMF}
           getOptionLabel={(option) => option.schemeName}
           renderInput={(params) => (
             <TextField
@@ -37,11 +46,12 @@ const App = () => {
             />
           )}
         />
+        {/* <Button>Save to local</Button> */}
       </div>
-
-      {selectedMF.map((schemaCode) => {
-        const url = `https://api.mfapi.in/mf/${schemaCode}`;
-        return <StockChart url={url} />;
+      {selectedMF.map((schemeData) => {
+        const { schemeCode } = schemeData;
+        const url = `https://api.mfapi.in/mf/${schemeCode}`;
+        return <StockChart url={url} key={schemeCode} />;
       })}
     </div>
   );
